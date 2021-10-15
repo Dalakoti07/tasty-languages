@@ -2,22 +2,6 @@ import {Router, Request, Response, NextFunction} from 'express';
 
 const router = Router();
 
-router.get('/login', (req: Request, res: Response)=>{
-    res.send(`
-        <form method="POST">
-            <div>
-                <label>Email</label>
-                <input name="email"/>
-            </div>
-            <div>
-                <label>Password</label>
-                <input name="password" type="password"/>
-            </div>
-            <button>submit</button>
-        </form>
-    `);
-});
-
 router.post('/login',(req: Request, res: Response)=>{
     const {email, password} = req.body;
     if(email && password && email === "sd@sd.com" && password === "password"){
@@ -27,6 +11,12 @@ router.post('/login',(req: Request, res: Response)=>{
         res.send("invalid creds");
     }
 })
+
+function post(routerName: string){
+    return function(target: any, key: string, desc: PropertyDescriptor){
+        router.post(routerName, target[key]);
+    }
+}
 
 function requireAuth(req: Request, res: Response, next: NextFunction){
     if(req.session && req.session.loggedIn){
