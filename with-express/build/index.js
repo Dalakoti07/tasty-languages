@@ -4,10 +4,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var express_1 = __importDefault(require("express"));
+var loginRoute_1 = require("./routers/loginRoute");
+var body_parser_1 = __importDefault(require("body-parser"));
+var cookie_session_1 = __importDefault(require("cookie-session"));
 var app = (0, express_1.default)();
-app.get('/', function (req, res) {
-    res.send("\n        <div>\n            <h1>Hello</h1>\n        </div>\n    ");
-});
+app.use(body_parser_1.default.urlencoded({
+    extended: true
+}));
+app.use((0, cookie_session_1.default)({
+    keys: ['someHash']
+}));
+app.use(loginRoute_1.router);
 app.listen(3000, function () {
     console.log("listening on port 3000");
 });
