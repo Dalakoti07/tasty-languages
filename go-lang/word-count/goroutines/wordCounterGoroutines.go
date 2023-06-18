@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -23,8 +24,18 @@ func WriteResultsToFile(hashMap map[string]int) {
 	}
 	defer file.Close()
 
+	// Extract the keys from the hashmap
+	var keys []string
+	for key := range hashMap {
+		keys = append(keys, key)
+	}
+
+	// Sort the keys
+	sort.Strings(keys)
+
 	// Write the hashmap to the file
-	for key, value := range hashMap {
+	for _, key := range keys {
+		value := hashMap[key]
 		line := fmt.Sprintf("%s: %v\n", key, value)
 		_, err := file.WriteString(line)
 		if err != nil {
