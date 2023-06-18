@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"sort"
@@ -50,6 +51,7 @@ func WriteResultsToFile(hashMap map[string]int) {
 func readFileFromCertainChuck(filePath string, start, end int64,
 	interimResults chan<- map[string]int, wg *sync.WaitGroup) {
 	defer wg.Done()
+	limit := end - start
 
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -68,24 +70,58 @@ func readFileFromCertainChuck(filePath string, start, end int64,
 		log.Panicf("Error seeking file: %f", err)
 	}
 
-	scanner := bufio.NewScanner(file)
+	reader := bufio.NewReader(file)
+
+	if start != 0 {
+		_, err = reader.ReadBytes(' ')
+		if err == io.EOF {
+			fmt.Println("EOF")
+			return
+		}
+
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	wordHashMap := make(map[string]int)
-	for scanner.Scan() {
-		line := scanner.Text()
-		eachWords := strings.Split(line, " ")
-		for _, word := range eachWords {
-			if word != "" {
-				word = strings.ToLower(word)
-				wordHashMap[word]++
+	var cummulativeSize int64
+	for {
+		// Break if read size has exceed the chunk size.
+		if cummulativeSize > limit {
+			break
+		}
+
+		b, err := reader.ReadBytes(' ')
+
+		// Break if end of file is encountered.
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			panic(err)
+		}
+
+		cummulativeSize += int64(len(b))
+		s := strings.TrimSpace(string(b))
+		s = strings.ToLower(s)
+		if s != "" {
+			// Send the read word in the channel to enter into dictionary.
+			if strings.Contains(s, "\n") {
+				listy := strings.Split(s, "\n")
+				for _, item := range listy {
+					item = strings.TrimSpace(item)
+					if item != "" {
+						wordHashMap[item]++
+					}
+				}
+			} else {
+				wordHashMap[s]++
 			}
 		}
 	}
 	interimResults <- wordHashMap
-
-	if err := scanner.Err(); err != nil {
-		log.Panicf("scanner got error: %v", err)
-	}
 }
 
 func main() {
@@ -96,8 +132,6 @@ func main() {
 	numWorkers := 5
 	var wg sync.WaitGroup
 
-	// todo improve this concurrent design
-	// create channel to receive hashmap from channel, and we would be using fan in approach
 	interimResulFromWorkers := make(chan map[string]int)
 
 	fileInfo, err := os.Stat(fileName)

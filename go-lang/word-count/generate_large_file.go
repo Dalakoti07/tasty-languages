@@ -31,7 +31,7 @@ func main() {
 	fmt.Printf("original size: %v\n", originalSize)
 
 	// Set the desired size of the output file (50 MB)
-	desiredSize := int64(50 * 1024 * 1024)
+	desiredSize := int64(2 * 500 * 1024 * 1024)
 
 	// Calculate the number of times to replicate the content
 	replicationFactor := desiredSize / originalSize

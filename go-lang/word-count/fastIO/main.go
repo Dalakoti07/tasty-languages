@@ -96,7 +96,20 @@ func read(offset int64, limit int64, fileName string, channel chan string) {
 		s = strings.ToLower(s)
 		if s != "" {
 			// Send the read word in the channel to enter into dictionary.
-			channel <- s
+		}
+		if s != "" {
+			// Send the read word in the channel to enter into dictionary.
+			if strings.Contains(s, "\n") {
+				listy := strings.Split(s, "\n")
+				for _, item := range listy {
+					item = strings.TrimSpace(item)
+					if item != "" {
+						channel <- item
+					}
+				}
+			} else {
+				channel <- s
+			}
 		}
 	}
 }
@@ -135,7 +148,7 @@ func main() {
 	var current int64
 
 	// Limit signifies the chunk size of file to be proccessed by every thread.
-	var limit int64 = 10 * mb
+	var limit int64 = 300 * mb
 
 	for i := 0; i < 5; i++ {
 		wg.Add(1)
