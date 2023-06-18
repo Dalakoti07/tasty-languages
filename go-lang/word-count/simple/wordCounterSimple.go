@@ -66,8 +66,10 @@ func main() {
 		line := scanner.Text()
 		eachWords := strings.Split(line, " ")
 		for _, word := range eachWords {
-			word = strings.ToLower(word)
-			wordHashMap[word]++
+			if word != "" {
+				word = strings.ToLower(word)
+				wordHashMap[word]++
+			}
 		}
 	}
 

@@ -93,6 +93,7 @@ func read(offset int64, limit int64, fileName string, channel chan string) {
 
 		cummulativeSize += int64(len(b))
 		s := strings.TrimSpace(string(b))
+		s = strings.ToLower(s)
 		if s != "" {
 			// Send the read word in the channel to enter into dictionary.
 			channel <- s

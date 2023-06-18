@@ -75,8 +75,10 @@ func readFileFromCertainChuck(filePath string, start, end int64,
 		line := scanner.Text()
 		eachWords := strings.Split(line, " ")
 		for _, word := range eachWords {
-			word = strings.ToLower(word)
-			wordHashMap[word]++
+			if word != "" {
+				word = strings.ToLower(word)
+				wordHashMap[word]++
+			}
 		}
 	}
 	interimResults <- wordHashMap
