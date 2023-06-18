@@ -5,15 +5,48 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
 )
 
 const mb = 1024 * 1024
-const gb = 1024 * mb
 
-func read(offset int64, limit int64, fileName string, channel chan (string)) {
+const outputFileName = "outputFile.txt"
+
+func WriteResultsToFile(hashMap map[string]int64) {
+	file, err := os.Create(outputFileName)
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+		return
+	}
+	defer file.Close()
+
+	// Extract the keys from the hashmap
+	var keys []string
+	for key := range hashMap {
+		keys = append(keys, key)
+	}
+
+	// Sort the keys
+	sort.Strings(keys)
+
+	// Write the hashmap to the file
+	for _, key := range keys {
+		value := hashMap[key]
+		line := fmt.Sprintf("%s: %v\n", key, value)
+		_, err := file.WriteString(line)
+		if err != nil {
+			fmt.Println("Error writing to file:", err)
+			return
+		}
+	}
+
+	fmt.Println("Hashmap written to output.txt")
+}
+
+func read(offset int64, limit int64, fileName string, channel chan string) {
 	file, err := os.Open(fileName)
 	defer file.Close()
 
@@ -92,7 +125,7 @@ func main() {
 
 		elapsedTime := time.Since(startTime).Milliseconds()
 		println("Time elapsed in milliseconds: ", elapsedTime)
-
+		WriteResultsToFile(dict)
 		// Signal the main thread that all the words have entered the dictionary.
 		done <- true
 	}()
@@ -101,16 +134,16 @@ func main() {
 	var current int64
 
 	// Limit signifies the chunk size of file to be proccessed by every thread.
-	var limit int64 = 100 * mb
+	var limit int64 = 10 * mb
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 5; i++ {
 		wg.Add(1)
 
-		go func() {
+		go func(i int, current int64) {
 			read(current, limit, "../larger.txt", channel)
-			fmt.Printf("%d thread has been completed", i)
+			fmt.Printf("\n%d thread has been completed\n", i)
 			wg.Done()
-		}()
+		}(i, current)
 
 		// Increment the current by 1+(last byte read by previous thread).
 		current += limit + 1
