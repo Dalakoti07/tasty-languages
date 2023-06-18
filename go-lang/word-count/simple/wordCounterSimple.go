@@ -11,7 +11,7 @@ import (
 )
 
 var outputFileName = "outputFile.txt"
-var fileName = "../sample.txt"
+var fileName = "../larger.txt"
 
 func WriteResultsToFile(hashMap map[string]int) {
 	file, err := os.Create(outputFileName)

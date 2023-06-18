@@ -14,7 +14,7 @@ import (
 // todo make implementation a bit robust dont panic everywhere, output info in console
 
 var outputFileName = "outputFile.txt"
-var fileName = "../sample.txt"
+var fileName = "../larger.txt"
 
 func WriteResultsToFile(hashMap map[string]int) {
 	file, err := os.Create(outputFileName)
@@ -79,7 +79,6 @@ func readFileFromCertainChuck(filePath string, start, end int64,
 			wordHashMap[word]++
 		}
 	}
-	fmt.Printf("sending result for %v-%v \n", start, end)
 	interimResults <- wordHashMap
 
 	if err := scanner.Err(); err != nil {
