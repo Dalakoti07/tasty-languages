@@ -2,38 +2,56 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
+	"time"
 )
 
-func f(left, right chan int) {
-	left <- 1 + <-right
+type CookInfo struct {
+	foodCooked     string
+	waitForPartner chan bool
+}
+
+func cookFood(name string) <-chan CookInfo {
+	cookChannel := make(chan CookInfo)
+	wait := make(chan bool)
+	go func() {
+		for i := 0; ; i++ {
+			cookChannel <- CookInfo{fmt.Sprintf("%s %s", name, "Done"), wait}
+			time.Sleep(time.Duration(rand.Intn(1e3)) * time.Millisecond)
+			<-wait
+		}
+	}()
+	return cookChannel
+}
+
+func fanIn(mychannel1, mychannel2 <-chan CookInfo) <-chan CookInfo {
+	mychannel := make(chan CookInfo)
+	go func() {
+		for {
+			mychannel <- <-mychannel1
+		}
+	}()
+	go func() {
+		for {
+			mychannel <- <-mychannel2
+		}
+	}()
+	return mychannel
 }
 
 func main() {
-	const n = 10000
-	// leftmost; right
-	leftmost := make(chan int)
-	right := leftmost
-	left := leftmost
-	for i := 0; i < n; i++ {
-		right = make(chan int)
-		go f(left, right)
-		left = right
+	gameChannel := fanIn(cookFood("Player 1 : "), cookFood("Player 2 :"))
+	for round := 0; round < 3; round++ {
+		// wait for food 1
+		food1 := <-gameChannel
+		fmt.Println(food1.foodCooked)
+		// wait for food 2
+		food2 := <-gameChannel
+		fmt.Println(food2.foodCooked)
+		// Note that we only send true back once we have received food from both the players
+		food1.waitForPartner <- true
+		food2.waitForPartner <- true
+		fmt.Printf("Done with round %d\n", round+1)
 	}
-	go func(c chan int) { c <- 1 }(right)
-	fmt.Println(<-leftmost)
-}
-
-func fanIn(input1, input2 <-chan string) <-chan string {
-	c := make(chan string)
-	go func() {
-		for {
-			c <- <-input1 // sending data from receive only channel to another channel
-		}
-	}()
-	go func() {
-		for {
-			c <- <-input2
-		}
-	}()
-	return c
+	fmt.Println("Done with the competition")
 }
