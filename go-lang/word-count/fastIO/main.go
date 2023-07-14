@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -14,6 +15,8 @@ import (
 const mb = 1024 * 1024
 
 const outputFileName = "outputFile.txt"
+
+var fileName = "../larger.txt"
 
 func WriteResultsToFile(hashMap map[string]int64) {
 	file, err := os.Create(outputFileName)
@@ -53,6 +56,7 @@ func read(offset int64, limit int64, fileName string, channel chan string) {
 	if err != nil {
 		panic(err)
 	}
+	fmt.Printf("reading from offset %d\n", offset)
 
 	// Move the pointer of the file to the start of designated chunk.
 	file.Seek(offset, 0)
@@ -94,9 +98,6 @@ func read(offset int64, limit int64, fileName string, channel chan string) {
 		cummulativeSize += int64(len(b))
 		s := strings.TrimSpace(string(b))
 		s = strings.ToLower(s)
-		if s != "" {
-			// Send the read word in the channel to enter into dictionary.
-		}
 		if s != "" {
 			// Send the read word in the channel to enter into dictionary.
 			if strings.Contains(s, "\n") {
@@ -147,15 +148,23 @@ func main() {
 	// Current signifies the counter for bytes of the file.
 	var current int64
 
-	// Limit signifies the chunk size of file to be proccessed by every thread.
-	var limit int64 = 300 * mb
+	fileInfo, err := os.Stat(fileName)
+	if err != nil {
+		panic("Error getting file info")
+	}
+	fileSize := fileInfo.Size()
+	numWorkers := runtime.NumCPU()
+	limit := fileSize / int64(numWorkers)
 
-	for i := 0; i < 5; i++ {
+	// Limit signifies the chunk size of file to be proccessed by every thread.
+	// var limit int64 = 300 * mb
+
+	for i := 0; i < numWorkers+1; i++ {
 		wg.Add(1)
 
 		go func(i int, current int64) {
-			read(current, limit, "../larger.txt", channel)
-			fmt.Printf("\n%d thread has been completed\n", i)
+			read(current, limit, fileName, channel)
+			fmt.Printf("\n%d th thread has been completed\n", i)
 			wg.Done()
 		}(i, current)
 
