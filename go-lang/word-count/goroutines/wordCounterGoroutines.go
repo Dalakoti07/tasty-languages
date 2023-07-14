@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -129,7 +130,7 @@ func main() {
 	startTime := time.Now()
 	totalWordHashMap := make(map[string]int)
 
-	numWorkers := 5
+	numWorkers := runtime.NumCPU()
 	var wg sync.WaitGroup
 
 	interimResulFromWorkers := make(chan map[string]int)
